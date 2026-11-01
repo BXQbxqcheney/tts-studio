@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>TTS Studio · 本地中文声音克隆</title>
+  <link rel="stylesheet" href="/static/style.css?v=0.7.0">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">TS</span>
+      <div>
+        <h1>TTS Studio</h1>
+        <p>本地中文声音克隆 · GPT-SoVITS v2ProPlus</p>
+      </div>
+    </div>
+    <div class="top-actions">
+      <span id="engine-pill" class="pill pill-loading">模型加载中</span>
+      <span id="concurrency-pill" class="pill pill-idle">并发 --</span>
+      <span id="version" class="mono muted">v0.1.0</span>
+      <button id="token-toggle" class="btn btn-ghost" type="button">访问令牌</button>
+    </div>
+  </header>
+
+  <div id="token-panel" class="token-panel" hidden>
+    <label for="token-input" class="mono">TTS_API_TOKEN</label>
+    <input id="token-input" type="password" autocomplete="off" placeholder="仅非本机访问时需要">
+    <button id="token-save" class="btn btn-primary" type="button">保存</button>
+    <button id="token-clear" class="btn btn-ghost" type="button">清除</button>
+  </div>
+
+  <main class="layout">
+    <section class="panel voices-panel">
+      <div class="panel-head">
+        <h2>音色库</h2>
+        <span id="voice-count" class="mono muted">0</span>
+      </div>
+      <div id="voice-list" class="voice-list">
+        <p class="empty">还没有音色。先上传一段 10–30 秒参考音频。</p>
+      </div>
+      <details class="upload-box">
+        <summary>上传参考音色</summary>
+        <form id="voice-form">
+          <label class="field">
+            <span>名称</span>
+            <input id="voice-name" maxlength="40" required placeholder="例如：我的声音">
+          </label>
+          <label class="field">
+            <span>参考音频（3–30 秒，建议 5–10 秒；WAV/M4A/MP3）</span>
+            <input id="voice-file" type="file" accept=".wav,.m4a,.mp3,.flac,.ogg" required>
+          </label>
+          <label class="field">
+            <span>逐字转写</span>
+            <textarea id="voice-transcript" rows="4" maxlength="2000" required placeholder="必须与参考音频逐字一致"></textarea>
+          </label>
+          <label class="field">
+            <span>备注（可选）</span>
+            <input id="voice-desc" maxlength="200" placeholder="例如：日常说话 / 正式播报">
+          </label>
+          <button class="btn btn-primary" type="submit">上传并注册</button>
+          <p id="upload-status" class="status-text" aria-live="polite"></p>
+        </form>
+      </details>
+    </section>
+
+    <section class="panel compose-panel">
+      <div class="panel-head">
+        <h2>合成</h2>
+        <span id="char-count" class="mono muted">0 / 10000</span>
+      </div>
+      <label class="field-label" for="text">文本</label>
+      <textarea id="text" rows="9" maxlength="10000" placeholder="输入要朗读的中文文本…">今天早上的天气有点凉，我出门的时候顺手带了一件外套。</textarea>
+      <p class="hint">最多 10000 字；超过 500 字会自动转为后台长任务，分段生成并显示进度。</p>
+      <p id="model-hint" class="hint">长段模型约 1000 字/段；微调模型约 160 字/段；Ming 约 80 字/段。</p>
+      <p id="mode-hint" class="hint">极限模式：双实例 + batch4，尽量吃满显存并预留约 1GB。</p>
+
+      <div class="settings-grid">
+        <label class="field">
+          <span>资源模式</span>
+          <select id="mode">
+            <option value="extreme" selected>极限 · 单实例 batch4</option>
+            <option value="high">高 · 双实例 batch1</option>
+            <option value="higher">较高 · 单实例 batch2</option>
+            <option value="medium">中 · 单实例 batch2</option>
+            <option value="low">低 · 单实例 batch1</option>
+            <option value="minimal">极低 · 最省显存</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>模型</span>
+          <select id="model">
+            <option value="gptsovits" selected>GPT-SoVITS 长段（≤1000 字/段）</option>
+            <option value="gptsovits_ft">GPT-SoVITS 微调（≤160 字/段）</option>
+            <option value="ming">Ming 零样本（≤80 字/段）</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>生成档位</span>
+          <select id="quality">
+            <option value="quality" selected>最高质量</option>
+            <option value="balanced">均衡</option>
+            <option value="fast">快速</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>后处理</span>
+          <select id="postprocess">
+            <option value="clean" selected>clean · 不加噪</option>
+            <option value="natural">natural · 轻微底噪</option>
+            <option value="warm">warm · 更暖</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>语速</span>
+          <select id="speed">
+            <option value="">默认</option>
+            <option value="慢速">慢速</option>
+            <option value="中速">中速</option>
+            <option value="快速">快速</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>音调</span>
+          <select id="pitch">
+            <option value="">默认</option>
+            <option value="低">低</option>
+            <option value="中">中</option>
+            <option value="高">高</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>音量</span>
+          <select id="volume">
+            <option value="">默认</option>
+            <option value="低">低</option>
+            <option value="中">中</option>
+            <option value="高">高</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>情绪</span>
+          <select id="emotion">
+            <option value="">默认</option>
+            <option value="高兴">高兴</option>
+            <option value="悲伤">悲伤</option>
+            <option value="愤怒">愤怒</option>
+            <option value="恐惧">恐惧</option>
+            <option value="厌恶">厌恶</option>
+            <option value="惊讶">惊讶</option>
+            <option value="中性">中性</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="compose-actions">
+        <button id="generate" class="btn btn-primary" type="button" disabled>生成语音</button>
+        <button id="cancel" class="btn btn-ghost" type="button" hidden>取消</button>
+        <span id="run-status" class="status-text" aria-live="polite"></span>
+      </div>
+
+      <div id="long-progress" class="long-progress" hidden>
+        <div class="progress-track"><div id="long-bar"></div></div>
+        <p id="long-status" class="status-text" aria-live="polite"></p>
+        <button id="resume-long" class="btn btn-ghost" type="button" hidden>恢复长任务</button>
+      </div>
+
+      <div id="metrics" class="metrics" hidden></div>
+      <audio id="player" controls hidden></audio>
+      <a id="download" class="btn btn-ghost" hidden download>下载 WAV</a>
+    </section>
+
+    <section class="panel history-panel">
+      <div class="panel-head">
+        <h2>最近生成</h2>
+        <span class="mono muted">最新 5 条</span>
+      </div>
+      <div id="history-list" class="history-list">
+        <p class="empty">还没有生成记录。</p>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" hidden role="alert"></div>
+  <script src="/static/app.js?v=0.7.0"></script>
+</body>
+</html>

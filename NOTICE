@@ -1,0 +1,13 @@
+# NOTICE
+
+TTS Studio（开源脱敏版）
+Copyright (C) 2026 白小谦 <qianxlfk@163.com>
+
+本程序是自由软件：你可以根据自由软件基金会发布的 GNU Affero 通用公共许可证（AGPL-3.0-or-later）的条款重新发布和/或修改它。本程序基于“按原样”提供，不附带任何担保。详见 LICENSE。
+
+本仓库不包含：
+- 任何用户录音、转写、生成音频、训练日志或个人信息；
+- 任何模型权重（Ming / GPT-SoVITS / ASR 等）；
+- 任何 API Key 或访问令牌。
+
+模型由使用者通过 download_models.cmd 从上游获取，使用前请遵守上游模型许可与当地法律，并确保拥有克隆目标声音的合法授权。
